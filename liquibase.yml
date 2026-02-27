@@ -1,9 +1,11 @@
 databaseChangeLog:
+
+  # ✅ PASSES ALL POLICIES
   - changeSet:
       id: product-table
       author: sonichigo
       context: dev
-      labels: products-api 
+      labels: products-api
       comment: Creating product table for REST API
       changes:
         - createTable:
@@ -28,6 +30,8 @@ databaseChangeLog:
       rollback:
         - dropTable:
             tableName: products
+
+  # ✅ PASSES ALL POLICIES
   - changeSet:
       id: product-table-indexes
       author: sonichigo
@@ -45,6 +49,8 @@ databaseChangeLog:
         - dropIndex:
             indexName: idx_product_name
             tableName: products
+
+  # ✅ PASSES ALL POLICIES
   - changeSet:
       id: product-sample-data-initial
       author: claude
@@ -74,6 +80,8 @@ databaseChangeLog:
         - delete:
             tableName: products
             where: name in ('Wireless Bluetooth Headphones', 'USB-C Charging Cable')
+
+  # ✅ PASSES ALL POLICIES
   - changeSet:
       id: product-sample-data-electronics
       author: sonichigo
@@ -103,6 +111,8 @@ databaseChangeLog:
         - delete:
             tableName: products
             where: name in ('Smartphone Case', 'Portable Power Bank')
+
+  # ✅ PASSES ALL POLICIES
   - changeSet:
       id: product-sample-data-accessories
       author: sonichigo
@@ -132,3 +142,548 @@ databaseChangeLog:
         - delete:
             tableName: products
             where: name in ('Wireless Mouse Pad', 'Ergonomic Laptop Stand')
+
+  # ─────────────────────────────────────────────────────────────
+  # ❌ VIOLATES POLICY 1 — Table name exceeds 10 characters
+  #    "product_inventory_items" = 23 chars (limit: 10)
+  # ─────────────────────────────────────────────────────────────
+  - changeSet:
+      id: violation-table-name-too-long
+      author: sonichigo
+      context: dev
+      labels: products-api
+      comment: "OPA TEST | Policy 1 FAIL: tableName 'product_inventory_items' is 23 chars, exceeds 10 char limit"
+      changes:
+        - createTable:
+            tableName: product_inventory_items
+            columns:
+              - column:
+                  name: id
+                  type: SERIAL
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: product_id
+                  type: INT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: quantity
+                  type: INT
+                  defaultValue: 0
+                  constraints:
+                    nullable: false
+      rollback:
+        - dropTable:
+            tableName: product_inventory_items
+
+  # ─────────────────────────────────────────────────────────────
+  # ❌ VIOLATES POLICY 2 — Schema name exceeds 30 characters
+  #    "ecommerce_products_management_schema" = 36 chars (limit: 30)
+  # ─────────────────────────────────────────────────────────────
+  - changeSet:
+      id: violation-schema-name-too-long
+      author: sonichigo
+      context: dev
+      labels: products-api
+      comment: "OPA TEST | Policy 2 FAIL: schema name 'ecommerce_products_management_schema' is 36 chars, exceeds 30 char limit"
+      changes:
+        - sql:
+            sql: CREATE SCHEMA ecommerce_products_management_schema;
+            comment: Schema name deliberately exceeds 30 character OPA policy limit
+      rollback:
+        - sql:
+            sql: DROP SCHEMA IF EXISTS ecommerce_products_management_schema;
+
+  # ─────────────────────────────────────────────────────────────
+  # ❌ VIOLATES POLICY 3 — Direct system table access
+  #    Queries pg_catalog.pg_tables (a PostgreSQL system catalog)
+  # ─────────────────────────────────────────────────────────────
+  - changeSet:
+      id: violation-system-table-access
+      author: sonichigo
+      context: dev
+      labels: products-api
+      comment: "OPA TEST | Policy 3 FAIL: direct SELECT from pg_catalog system table"
+      changes:
+        - sql:
+            sql: SELECT table_name FROM pg_catalog.pg_tables WHERE schemaname = 'public';
+            comment: Direct system table access violates OPA policy
+      rollback:
+        - sql:
+            sql: SELECT 1;
+
+  # ─────────────────────────────────────────────────────────────
+  # ❌ VIOLATES POLICY 4 — Transaction exceeds 50 SQL statements
+  #    51 INSERT statements in a single changeset (limit: 50)
+  # ─────────────────────────────────────────────────────────────
+  - changeSet:
+      id: violation-large-transaction
+      author: sonichigo
+      context: dev
+      labels: products-api
+      comment: "OPA TEST | Policy 4 FAIL: 51 INSERT statements in one changeset, exceeds limit of 50"
+      changes:
+        - insert:
+            tableName: products
+            columns:
+              - column:
+                  name: name
+                  value: "Bulk Product 1"
+              - column:
+                  name: price
+                  value: 1.00
+        - insert:
+            tableName: products
+            columns:
+              - column:
+                  name: name
+                  value: "Bulk Product 2"
+              - column:
+                  name: price
+                  value: 2.00
+        - insert:
+            tableName: products
+            columns:
+              - column:
+                  name: name
+                  value: "Bulk Product 3"
+              - column:
+                  name: price
+                  value: 3.00
+        - insert:
+            tableName: products
+            columns:
+              - column:
+                  name: name
+                  value: "Bulk Product 4"
+              - column:
+                  name: price
+                  value: 4.00
+        - insert:
+            tableName: products
+            columns:
+              - column:
+                  name: name
+                  value: "Bulk Product 5"
+              - column:
+                  name: price
+                  value: 5.00
+        - insert:
+            tableName: products
+            columns:
+              - column:
+                  name: name
+                  value: "Bulk Product 6"
+              - column:
+                  name: price
+                  value: 6.00
+        - insert:
+            tableName: products
+            columns:
+              - column:
+                  name: name
+                  value: "Bulk Product 7"
+              - column:
+                  name: price
+                  value: 7.00
+        - insert:
+            tableName: products
+            columns:
+              - column:
+                  name: name
+                  value: "Bulk Product 8"
+              - column:
+                  name: price
+                  value: 8.00
+        - insert:
+            tableName: products
+            columns:
+              - column:
+                  name: name
+                  value: "Bulk Product 9"
+              - column:
+                  name: price
+                  value: 9.00
+        - insert:
+            tableName: products
+            columns:
+              - column:
+                  name: name
+                  value: "Bulk Product 10"
+              - column:
+                  name: price
+                  value: 10.00
+        - insert:
+            tableName: products
+            columns:
+              - column:
+                  name: name
+                  value: "Bulk Product 11"
+              - column:
+                  name: price
+                  value: 11.00
+        - insert:
+            tableName: products
+            columns:
+              - column:
+                  name: name
+                  value: "Bulk Product 12"
+              - column:
+                  name: price
+                  value: 12.00
+        - insert:
+            tableName: products
+            columns:
+              - column:
+                  name: name
+                  value: "Bulk Product 13"
+              - column:
+                  name: price
+                  value: 13.00
+        - insert:
+            tableName: products
+            columns:
+              - column:
+                  name: name
+                  value: "Bulk Product 14"
+              - column:
+                  name: price
+                  value: 14.00
+        - insert:
+            tableName: products
+            columns:
+              - column:
+                  name: name
+                  value: "Bulk Product 15"
+              - column:
+                  name: price
+                  value: 15.00
+        - insert:
+            tableName: products
+            columns:
+              - column:
+                  name: name
+                  value: "Bulk Product 16"
+              - column:
+                  name: price
+                  value: 16.00
+        - insert:
+            tableName: products
+            columns:
+              - column:
+                  name: name
+                  value: "Bulk Product 17"
+              - column:
+                  name: price
+                  value: 17.00
+        - insert:
+            tableName: products
+            columns:
+              - column:
+                  name: name
+                  value: "Bulk Product 18"
+              - column:
+                  name: price
+                  value: 18.00
+        - insert:
+            tableName: products
+            columns:
+              - column:
+                  name: name
+                  value: "Bulk Product 19"
+              - column:
+                  name: price
+                  value: 19.00
+        - insert:
+            tableName: products
+            columns:
+              - column:
+                  name: name
+                  value: "Bulk Product 20"
+              - column:
+                  name: price
+                  value: 20.00
+        - insert:
+            tableName: products
+            columns:
+              - column:
+                  name: name
+                  value: "Bulk Product 21"
+              - column:
+                  name: price
+                  value: 21.00
+        - insert:
+            tableName: products
+            columns:
+              - column:
+                  name: name
+                  value: "Bulk Product 22"
+              - column:
+                  name: price
+                  value: 22.00
+        - insert:
+            tableName: products
+            columns:
+              - column:
+                  name: name
+                  value: "Bulk Product 23"
+              - column:
+                  name: price
+                  value: 23.00
+        - insert:
+            tableName: products
+            columns:
+              - column:
+                  name: name
+                  value: "Bulk Product 24"
+              - column:
+                  name: price
+                  value: 24.00
+        - insert:
+            tableName: products
+            columns:
+              - column:
+                  name: name
+                  value: "Bulk Product 25"
+              - column:
+                  name: price
+                  value: 25.00
+        - insert:
+            tableName: products
+            columns:
+              - column:
+                  name: name
+                  value: "Bulk Product 26"
+              - column:
+                  name: price
+                  value: 26.00
+        - insert:
+            tableName: products
+            columns:
+              - column:
+                  name: name
+                  value: "Bulk Product 27"
+              - column:
+                  name: price
+                  value: 27.00
+        - insert:
+            tableName: products
+            columns:
+              - column:
+                  name: name
+                  value: "Bulk Product 28"
+              - column:
+                  name: price
+                  value: 28.00
+        - insert:
+            tableName: products
+            columns:
+              - column:
+                  name: name
+                  value: "Bulk Product 29"
+              - column:
+                  name: price
+                  value: 29.00
+        - insert:
+            tableName: products
+            columns:
+              - column:
+                  name: name
+                  value: "Bulk Product 30"
+              - column:
+                  name: price
+                  value: 30.00
+        - insert:
+            tableName: products
+            columns:
+              - column:
+                  name: name
+                  value: "Bulk Product 31"
+              - column:
+                  name: price
+                  value: 31.00
+        - insert:
+            tableName: products
+            columns:
+              - column:
+                  name: name
+                  value: "Bulk Product 32"
+              - column:
+                  name: price
+                  value: 32.00
+        - insert:
+            tableName: products
+            columns:
+              - column:
+                  name: name
+                  value: "Bulk Product 33"
+              - column:
+                  name: price
+                  value: 33.00
+        - insert:
+            tableName: products
+            columns:
+              - column:
+                  name: name
+                  value: "Bulk Product 34"
+              - column:
+                  name: price
+                  value: 34.00
+        - insert:
+            tableName: products
+            columns:
+              - column:
+                  name: name
+                  value: "Bulk Product 35"
+              - column:
+                  name: price
+                  value: 35.00
+        - insert:
+            tableName: products
+            columns:
+              - column:
+                  name: name
+                  value: "Bulk Product 36"
+              - column:
+                  name: price
+                  value: 36.00
+        - insert:
+            tableName: products
+            columns:
+              - column:
+                  name: name
+                  value: "Bulk Product 37"
+              - column:
+                  name: price
+                  value: 37.00
+        - insert:
+            tableName: products
+            columns:
+              - column:
+                  name: name
+                  value: "Bulk Product 38"
+              - column:
+                  name: price
+                  value: 38.00
+        - insert:
+            tableName: products
+            columns:
+              - column:
+                  name: name
+                  value: "Bulk Product 39"
+              - column:
+                  name: price
+                  value: 39.00
+        - insert:
+            tableName: products
+            columns:
+              - column:
+                  name: name
+                  value: "Bulk Product 40"
+              - column:
+                  name: price
+                  value: 40.00
+        - insert:
+            tableName: products
+            columns:
+              - column:
+                  name: name
+                  value: "Bulk Product 41"
+              - column:
+                  name: price
+                  value: 41.00
+        - insert:
+            tableName: products
+            columns:
+              - column:
+                  name: name
+                  value: "Bulk Product 42"
+              - column:
+                  name: price
+                  value: 42.00
+        - insert:
+            tableName: products
+            columns:
+              - column:
+                  name: name
+                  value: "Bulk Product 43"
+              - column:
+                  name: price
+                  value: 43.00
+        - insert:
+            tableName: products
+            columns:
+              - column:
+                  name: name
+                  value: "Bulk Product 44"
+              - column:
+                  name: price
+                  value: 44.00
+        - insert:
+            tableName: products
+            columns:
+              - column:
+                  name: name
+                  value: "Bulk Product 45"
+              - column:
+                  name: price
+                  value: 45.00
+        - insert:
+            tableName: products
+            columns:
+              - column:
+                  name: name
+                  value: "Bulk Product 46"
+              - column:
+                  name: price
+                  value: 46.00
+        - insert:
+            tableName: products
+            columns:
+              - column:
+                  name: name
+                  value: "Bulk Product 47"
+              - column:
+                  name: price
+                  value: 47.00
+        - insert:
+            tableName: products
+            columns:
+              - column:
+                  name: name
+                  value: "Bulk Product 48"
+              - column:
+                  name: price
+                  value: 48.00
+        - insert:
+            tableName: products
+            columns:
+              - column:
+                  name: name
+                  value: "Bulk Product 49"
+              - column:
+                  name: price
+                  value: 49.00
+        - insert:
+            tableName: products
+            columns:
+              - column:
+                  name: name
+                  value: "Bulk Product 50"
+              - column:
+                  name: price
+                  value: 50.00
+        - insert:
+            tableName: products
+            columns:
+              - column:
+                  name: name
+                  value: "Bulk Product 51"
+              - column:
+                  name: price
+                  value: 51.00
+      rollback:
+        - delete:
+            tableName: products
+            where: name LIKE 'Bulk Product%'
